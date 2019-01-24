@@ -35,6 +35,8 @@ static NSString* const setDefaultOptions	= @"setDefaultOptions";
 	RNNNavigationStackManager* _stackManager;
 	RNNEventEmitter* _eventEmitter;
 	UIWindow* _mainWindow;
+	BOOL _isRootLaunchScreen;
+	UIViewController *_pendingRoot;
 }
 
 - (instancetype)initWithStore:(RNNStore*)store controllerFactory:(RNNControllerFactory*)controllerFactory eventEmitter:(RNNEventEmitter *)eventEmitter stackManager:(RNNNavigationStackManager *)stackManager modalManager:(RNNModalManager *)modalManager overlayManager:(RNNOverlayManager *)overlayManager mainWindow:(UIWindow *)mainWindow {
@@ -47,6 +49,7 @@ static NSString* const setDefaultOptions	= @"setDefaultOptions";
 	_stackManager = stackManager;
 	_overlayManager = overlayManager;
 	_mainWindow = mainWindow;
+	_isRootLaunchScreen = YES;
 	return self;
 }
 
@@ -58,12 +61,55 @@ static NSString* const setDefaultOptions	= @"setDefaultOptions";
 	[_modalManager dismissAllModalsAnimated:NO];
 	[_store removeAllComponentsFromWindow:_mainWindow];
 	
-	UIViewController *vc = [_controllerFactory createLayout:layout[@"root"] saveToStore:_store];
+	UIViewController<RNNParentProtocol> *vc = [_controllerFactory createLayout:layout[@"root"] saveToStore:_store];
+
+	// First time, wait for first render
+	_pendingRoot = vc;
+	_pendingRoot.view.frame = _mainWindow.rootViewController.view.frame;
 	
-	_mainWindow.rootViewController = vc;
+	__weak __typeof(self) _self = self;
 	
-	[_eventEmitter sendOnNavigationCommandCompletion:setRoot params:@{@"layout": layout}];
-	completion();
+	void (^complete)() = ^{
+		__typeof(self) __self = _self;
+		
+		// Sanity!
+		if (!__self || __self->_pendingRoot != vc) return;
+		
+		// Now we finally replace the launch screen
+		__self->_mainWindow.rootViewController = __self->_pendingRoot;
+		__self->_pendingRoot = nil;
+		
+		// Let us know later that it's not the launch screen anymore
+		_isRootLaunchScreen = NO;
+		
+		// Let whoever know that we're ready
+		[_eventEmitter sendOnNavigationCommandCompletion:setRoot params:@{@"layout": layout}];
+		completion();
+	};
+	
+	if (vc.resolveOptions.animations.setRoot.waitForRender)
+	{
+		[vc.getCurrentLeaf waitForReactViewReady:YES waitForUIEvent:YES perform:^{
+			complete();
+		}];
+	}
+	else
+	{
+		_mainWindow.rootViewController = _pendingRoot;
+		
+		// Let us know later that it's not the launch screen anymore
+		_isRootLaunchScreen = NO;
+		
+		// Let whoever know that we're ready
+		[_eventEmitter sendOnNavigationCommandCompletion:setRoot params:@{@"layout": layout}];
+		completion();
+	}
+}
+
+- (void)removeRootIfNotLaunchScreen {
+	if (!_isRootLaunchScreen) {
+		_mainWindow.rootViewController = nil;
+	}
 }
 
 - (void)mergeOptions:(NSString*)componentId options:(NSDictionary*)mergeOptions completion:(RNNTransitionCompletionBlock)completion {
@@ -141,7 +187,7 @@ static NSString* const setDefaultOptions	= @"setDefaultOptions";
 		}
 	} else {
 		id animationDelegate = (newVc.resolveOptions.animations.push.hasCustomAnimation || newVc.getCurrentLeaf.isCustomTransitioned) ? newVc : nil;
-		[newVc.getCurrentLeaf waitForReactViewRender:(newVc.resolveOptions.animations.push.waitForRender || animationDelegate) perform:^{
+		[newVc.getCurrentLeaf waitForReactViewReady:(newVc.resolveOptions.animations.push.waitForRender || animationDelegate) waitForUIEvent:NO perform:^{
 			[_stackManager push:newVc onTop:fromVC animated:newVc.resolveOptions.animations.push.enable animationDelegate:animationDelegate completion:^{
 				[_eventEmitter sendOnNavigationCommandCompletion:push params:@{@"componentId": componentId}];
 				completion();
@@ -150,14 +196,14 @@ static NSString* const setDefaultOptions	= @"setDefaultOptions";
 	}
 }
 
-- (void)setStackRoot:(NSString*)componentId layout:(NSDictionary*)layout completion:(RNNTransitionCompletionBlock)completion rejection:(RCTPromiseRejectBlock)rejection {
+- (void)setStackRoot:(NSString*)componentId children:(NSArray*)children completion:(RNNTransitionCompletionBlock)completion rejection:(RCTPromiseRejectBlock)rejection {
 	[self assertReady];
 	
-	UIViewController<RNNParentProtocol> *newVC = [_controllerFactory createLayout:layout saveToStore:_store];
-	RNNNavigationOptions* options = [newVC getCurrentChild].resolveOptions;
+ 	NSArray<RNNLayoutProtocol> *childViewControllers = [_controllerFactory createChildrenLayout:children saveToStore:_store];
+	RNNNavigationOptions* options = [childViewControllers.lastObject getCurrentChild].resolveOptions;
 	UIViewController *fromVC = [_store findComponentForId:componentId];
 	__weak typeof(RNNEventEmitter*) weakEventEmitter = _eventEmitter;
-	[_stackManager setStackRoot:newVC fromViewController:fromVC animated:options.animations.setStackRoot.enable completion:^{
+	[_stackManager setStackChildren:childViewControllers fromViewController:fromVC animated:options.animations.setStackRoot.enable completion:^{
 		[weakEventEmitter sendOnNavigationCommandCompletion:setStackRoot params:@{@"componentId": componentId}];
 		completion();
 	} rejection:rejection];
@@ -230,7 +276,7 @@ static NSString* const setDefaultOptions	= @"setDefaultOptions";
 	
 	UIViewController<RNNParentProtocol> *newVc = [_controllerFactory createLayout:layout saveToStore:_store];
 	
-	[newVc.getCurrentLeaf waitForReactViewRender:newVc.getCurrentLeaf.resolveOptions.animations.showModal.waitForRender perform:^{
+	[newVc.getCurrentLeaf waitForReactViewReady:newVc.getCurrentLeaf.resolveOptions.animations.showModal.waitForRender waitForUIEvent:NO perform:^{
 		[_modalManager showModal:newVc animated:newVc.getCurrentChild.resolveOptions.animations.showModal.enable hasCustomAnimation:newVc.getCurrentChild.resolveOptions.animations.showModal.hasCustomAnimation completion:^(NSString *componentId) {
 			[_eventEmitter sendOnNavigationCommandCompletion:showModal params:@{@"layout": layout}];
 			completion(componentId);

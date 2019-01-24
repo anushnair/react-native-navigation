@@ -1,22 +1,28 @@
 #import "RNNScreenTransition.h"
 
+
 @implementation RNNScreenTransition
 
 - (instancetype)initWithDict:(NSDictionary *)dict {
 	self = [super init];
-
-	self.topBar = dict[@"topBar"] ? [[RNNTransitionStateHolder alloc] initWithDict:dict[@"topBar"]] : nil;
-	self.content = dict[@"content"] ? [[RNNTransitionStateHolder alloc] initWithDict:dict[@"content"]] : nil;
-	self.bottomTabs = dict[@"bottomTabs"] ? [[RNNTransitionStateHolder alloc] initWithDict:dict[@"bottomTabs"]] : nil;
-
+	
+	self.hasTopBar = [dict objectForKey: @"topBar"] != nil;
+	self.hasContent = [dict objectForKey: @"content"] != nil;
+	self.hasBottomTabs = [dict objectForKey: @"bottomTabs"] != nil;
+	
+	self.topBar = [[RNNTransitionStateHolder alloc] initWithDict: dict[@"topBar"]];
+	self.content = [[RNNTransitionStateHolder alloc] initWithDict: dict[@"content"]];
+	self.bottomTabs = [[RNNTransitionStateHolder alloc] initWithDict: dict[@"bottomTabs"]];
+	
 	self.enable = dict[@"enabled"] ? [dict[@"enabled"] boolValue] : YES;
 	self.waitForRender = dict[@"waitForRender"] ? [dict[@"waitForRender"] boolValue] : NO;
-
+	
+	
 	return self;
 }
 
 - (BOOL)hasCustomAnimation {
-	return (self.topBar || self.content || self.bottomTabs);
+	return (self.hasTopBar || self.hasContent || self.hasBottomTabs);
 }
 
 @end
