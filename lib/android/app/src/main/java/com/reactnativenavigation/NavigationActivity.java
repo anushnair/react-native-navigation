@@ -7,12 +7,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.view.View;
 
-import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler;
-import com.facebook.react.modules.core.PermissionAwareActivity;
+import com.facebook.react.ReactActivity;
 import com.facebook.react.modules.core.PermissionListener;
 import com.reactnativenavigation.presentation.OverlayManager;
 import com.reactnativenavigation.react.JsDevReloadHandler;
@@ -23,7 +21,7 @@ import com.reactnativenavigation.viewcontrollers.modal.ModalStack;
 import com.reactnativenavigation.viewcontrollers.navigator.Navigator;
 import com.reactnativenavigation.viewcontrollers.navigator.RootPresenter;
 
-public class NavigationActivity extends AppCompatActivity implements DefaultHardwareBackBtnHandler, PermissionAwareActivity, JsDevReloadHandler.ReloadListener {
+public class NavigationActivity extends ReactActivity implements JsDevReloadHandler.ReloadListener {
     @Nullable
     private PermissionListener mPermissionListener;
     
@@ -78,7 +76,7 @@ public class NavigationActivity extends AppCompatActivity implements DefaultHard
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         getReactGateway().onActivityResult(this, requestCode, resultCode, data);
     }
