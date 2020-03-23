@@ -8,6 +8,8 @@
 #import "ImageParser.h"
 #import "IntNumberParser.h"
 #import "DoubleParser.h"
+#import "EnumParser.h"
+#import "TimeIntervalParser.h"
 
 @interface RNNOptions : NSObject
 
@@ -15,6 +17,7 @@
 
 - (RNNOptions *)overrideOptions:(RNNOptions *)otherOptions;
 - (RNNOptions *)mergeOptions:(RNNOptions *)otherOptions;
+- (RNNOptions *)mergeInOptions:(RNNOptions *)otherOptions;
 
 - (RNNOptions *)withDefault:(RNNOptions *)defaultOptions;
 

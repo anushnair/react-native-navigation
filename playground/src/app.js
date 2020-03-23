@@ -1,179 +1,93 @@
-const { Navigation } = require('react-native-navigation');
+// @ts-check
+const Navigation = require('./services/Navigation');
 const { registerScreens } = require('./screens');
 const { Platform } = require('react-native');
+const { setDefaultOptions } = require('./commons/Options')
+const testIDs = require('./testIDs');
+const Screens = require('./screens/Screens');
 
 if (Platform.OS === 'android') {
-  alert = (title) => {
-    Navigation.showOverlay({
-      component: {
-        name: 'navigation.playground.alert',
-        passProps: {
-          title
-        },
-        options: {
-          layout: {
-            componentBackgroundColor: 'transparent'
-          },
-          overlay: {
-            interceptTouchOutside: true
-          }
-        }
+  alert = (title, message) => Navigation.showOverlay({
+    component: {
+      name: Screens.Alert,
+      passProps: {
+        title,
+        message
       }
-    });
-  };
-}
+    }
+  });
+};
 
 function start() {
   registerScreens();
   Navigation.events().registerAppLaunchedListener(async () => {
-    Navigation.setDefaultOptions({
-      layout: {
-        componentBackgroundColor: '#e8e8e8',
-        orientation: ['portrait']
-      },
-      bottomTab: {
-        iconColor: '#1B4C77',
-        selectedIconColor: '#0f0',
-        textColor: '#1B4C77',
-        selectedTextColor: '#0f0',
-        fontFamily: 'HelveticaNeue-Italic',
-        fontSize: 13
-      },
-      _animations: {
-        push: {
-          waitForRender: false,
-        }
-      },
-      animations: {
-        setRoot: {
-          alpha: {
-            from: 0,
-            to: 1,
-            duration: 300
-          }
-        },
-        _push: {
-          topBar: {
-            id: 'TEST',
-            alpha: {
-              from: 0,
-              to: 1,
-              duration: 500,
-              interpolation: 'accelerate'
-            }
-          },
-          bottomTabs: {
-            y: {
-              from: 1000,
-              to: 0,
-              duration: 500,
-              interpolation: 'decelerate',
-            },
-            alpha: {
-              from: 0,
-              to: 1,
-              duration: 500,
-              interpolation: 'decelerate'
-            }
-          },
-          content: {
-            y: {
-              from: 1000,
-              to: 0,
-              duration: 500,
-              interpolation: 'accelerate',
-            },
-            alpha: {
-              from: 0,
-              to: 1,
-              duration: 500,
-              interpolation: 'accelerate'
-            }
-          }
-        },
-        _pop: {
-          topBar: {
-            id: 'TEST',
-            alpha: {
-              from: 1,
-              to: 0,
-              duration: 500,
-              interpolation: 'accelerate'
-            }
-          },
-          bottomTabs: {
-            y: {
-              from: 0,
-              to: 100,
-              duration: 500,
-              interpolation: 'accelerate',
-            },
-            alpha: {
-              from: 1,
-              to: 0,
-              duration: 500,
-              interpolation: 'accelerate'
-            }
-          },
-          bottomTabs: {
-            y: {
-              from: 0,
-              to: 100,
-              duration: 500,
-              interpolation: 'decelerate',
-            },
-            alpha: {
-              from: 1,
-              to: 0,
-              duration: 500,
-              interpolation: 'decelerate'
-            }
-          },
-          content: {
-            y: {
-              from: 0,
-              to: 1000,
-              duration: 500,
-              interpolation: 'decelerate',
-            },
-            alpha: {
-              from: 1,
-              to: 0,
-              duration: 500,
-              interpolation: 'decelerate'
-            }
-          }
-        }
-      }
-    });
+    setDefaultOptions();
+    setRoot();
+  });
+}
 
-    // await Navigation.showModal({
-    //   stack: {
-    //     children: [
-    //       {
-    //         component: {
-    //           name: 'navigation.playground.ModalScreen'
-    //         }
-    //       }
-    //     ]
-    //   }
-    // });
-
-    Navigation.setRoot({
-      root: {
-        stack: {
-          id: 'TEST',
-          children: [
-            {
-              component: {
-                name: 'navigation.playground.WelcomeScreen'
-                // name: 'navigation.playground.CustomTransitionOrigin'
+function setRoot() {
+  Navigation.setRoot({
+    root: {
+      bottomTabs: {
+        children: [
+          {
+            stack: {
+              children: [
+                {
+                  component: {
+                    name: 'Layouts'
+                  }
+                }
+              ],
+              options: {
+                bottomTab: {
+                  text: 'Layouts',
+                  icon: require('../img/layouts.png'),
+                  selectedIcon: require('../img/layouts_selected.png'),
+                  testID: testIDs.LAYOUTS_TAB
+                }
               }
             }
-          ]
-        }
+          },
+          {
+            stack: {
+              children: [
+                {
+                  component: {
+                    name: 'Options'
+                  }
+                }
+              ],
+              options: {
+                topBar: {
+                  title: {
+                    text: 'Default Title'
+                  }
+                },
+                bottomTab: {
+                  text: 'Options',
+                  icon: require('../img/options.png'),
+                  selectedIcon: require('../img/options_selected.png'),
+                  testID: testIDs.OPTIONS_TAB
+                }
+              }
+            }
+          },
+          {
+            stack: {
+              children: [
+                {
+                  component: {
+                    name: 'Navigation'
+                  }
+                }
+              ]
+            }
+          }
+        ]
       }
-    });
+    }
   });
 }
 

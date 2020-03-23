@@ -2,7 +2,6 @@
 #import <UIKit/UIKit.h>
 #import <React/RCTBridge.h>
 #import <React/RCTUIManager.h>
-#import "RNNBridgeManagerDelegate.h"
 
 @class RNNBridgeManager;
 
@@ -12,11 +11,15 @@ typedef UIViewController * (^RNNExternalViewCreator)(NSDictionary* props, RCTBri
 
 + (void)bootstrap:(NSURL *)jsCodeLocation launchOptions:(NSDictionary *)launchOptions;
 
-+ (void)bootstrap:(NSURL *)jsCodeLocation launchOptions:(NSDictionary *)launchOptions bridgeManagerDelegate:(id<RNNBridgeManagerDelegate>)delegate;
++ (void)bootstrap:(NSURL *)jsCodeLocation launchOptions:(NSDictionary *)launchOptions bridgeManagerDelegate:(id<RCTBridgeDelegate>)delegate;
+
++ (void)bootstrapWithDelegate:(id<RCTBridgeDelegate>)bridgeDelegate launchOptions:(NSDictionary *)launchOptions;
 
 + (void)registerExternalComponent:(NSString *)name callback:(RNNExternalViewCreator)callback;
 
 + (UIViewController *)findViewController:(NSString *)componentId;
+
++ (void)setJSCodeLocation:(NSURL *)jsCodeLocation;
 
 + (RCTBridge *)getBridge;
 

@@ -1,19 +1,22 @@
 #import "RNNOptions.h"
-#import "RNNTransitionStateHolder.h"
+#import "ElementTransitionOptions.h"
+#import "SharedElementTransitionOptions.h"
 
 @interface RNNScreenTransition : RNNOptions
 
-@property (nonatomic, strong) RNNTransitionStateHolder* topBar;
-@property (nonatomic, strong) RNNTransitionStateHolder* content;
-@property (nonatomic, strong) RNNTransitionStateHolder* bottomTabs;
+@property (nonatomic, strong) ElementTransitionOptions* topBar;
+@property (nonatomic, strong) ElementTransitionOptions* content;
+@property (nonatomic, strong) ElementTransitionOptions* bottomTabs;
+@property (nonatomic, strong) NSArray<ElementTransitionOptions *>* elementTransitions;
+@property (nonatomic, strong) NSArray<SharedElementTransitionOptions *>* sharedElementTransitions;
 
-@property (nonatomic) BOOL hasTopBar;
-@property (nonatomic) BOOL hasContent;
-@property (nonatomic) BOOL hasBottomTabs;
-
-@property (nonatomic) BOOL enable;
-@property (nonatomic) BOOL waitForRender;
+@property (nonatomic, strong) Bool* enable;
+@property (nonatomic, strong) Bool* waitForRender;
+@property (nonatomic, strong) TimeInterval* duration;
 
 - (BOOL)hasCustomAnimation;
+- (BOOL)shouldWaitForRender;
+- (NSTimeInterval)maxDuration;
+
 
 @end

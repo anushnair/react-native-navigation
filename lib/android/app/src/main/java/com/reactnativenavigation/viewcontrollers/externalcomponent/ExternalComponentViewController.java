@@ -1,42 +1,89 @@
 package com.reactnativenavigation.viewcontrollers.externalcomponent;
 
 import android.app.Activity;
-import android.support.v4.app.FragmentActivity;
+import android.view.View;
 
 import com.facebook.react.ReactInstanceManager;
-import com.facebook.react.bridge.ReactContext;
 import com.reactnativenavigation.parse.ExternalComponent;
 import com.reactnativenavigation.parse.Options;
-import com.reactnativenavigation.react.EventEmitter;
-import com.reactnativenavigation.viewcontrollers.NoOpYellowBoxDelegate;
-import com.reactnativenavigation.viewcontrollers.ViewController;
+import com.reactnativenavigation.presentation.ExternalComponentPresenter;
+import com.reactnativenavigation.presentation.Presenter;
+import com.reactnativenavigation.react.events.ComponentType;
+import com.reactnativenavigation.react.events.EventEmitter;
+import com.reactnativenavigation.utils.CoordinatorLayoutUtils;
+import com.reactnativenavigation.utils.StatusBarUtils;
+import com.reactnativenavigation.viewcontrollers.ChildController;
+import com.reactnativenavigation.viewcontrollers.ChildControllersRegistry;
+import com.reactnativenavigation.views.BehaviourDelegate;
 import com.reactnativenavigation.views.ExternalComponentLayout;
 
-public class ExternalComponentViewController extends ViewController<ExternalComponentLayout> {
+import androidx.core.view.ViewCompat;
+import androidx.fragment.app.FragmentActivity;
+
+import static com.reactnativenavigation.utils.ObjectUtils.perform;
+
+public class ExternalComponentViewController extends ChildController<ExternalComponentLayout> {
     private final ExternalComponent externalComponent;
     private final ExternalComponentCreator componentCreator;
     private ReactInstanceManager reactInstanceManager;
+    private final EventEmitter emitter;
+    private final ExternalComponentPresenter presenter;
 
-    public ExternalComponentViewController(Activity activity, String id, ExternalComponent externalComponent, ExternalComponentCreator componentCreator, ReactInstanceManager reactInstanceManager, Options initialOptions) {
-        super(activity, id, new NoOpYellowBoxDelegate(), initialOptions);
+    public ExternalComponentViewController(Activity activity, ChildControllersRegistry childRegistry, String id, Presenter presenter, ExternalComponent externalComponent, ExternalComponentCreator componentCreator, ReactInstanceManager reactInstanceManager, EventEmitter emitter, ExternalComponentPresenter externalComponentPresenter, Options initialOptions) {
+        super(activity, childRegistry, id, presenter, initialOptions);
         this.externalComponent = externalComponent;
         this.componentCreator = componentCreator;
         this.reactInstanceManager = reactInstanceManager;
+        this.emitter = emitter;
+        this.presenter = externalComponentPresenter;
     }
 
     @Override
     protected ExternalComponentLayout createView() {
         ExternalComponentLayout content = new ExternalComponentLayout(getActivity());
-        content.addView(componentCreator.create(getActivity(), reactInstanceManager, externalComponent.passProps).asView());
+        enableDrawingBehindStatusBar(content);
+        content.addView(componentCreator
+                .create(getActivity(), reactInstanceManager, externalComponent.passProps)
+                .asView(), CoordinatorLayoutUtils.matchParentWithBehaviour(new BehaviourDelegate(this)));
         return content;
     }
 
     @Override
     public void sendOnNavigationButtonPressed(String buttonId) {
-        ReactContext currentReactContext = reactInstanceManager.getCurrentReactContext();
-        if (currentReactContext != null) {
-            new EventEmitter(currentReactContext).emitOnNavigationButtonPressed(getId(), buttonId);
-        }
+        emitter.emitOnNavigationButtonPressed(getId(), buttonId);
+    }
+
+    @Override
+    public void onViewAppeared() {
+        super.onViewAppeared();
+        emitter.emitComponentDidAppear(getId(), externalComponent.name.get(), ComponentType.Component);
+    }
+
+    @Override
+    public void onViewDisappear() {
+        super.onViewDisappear();
+        emitter.emitComponentDidDisappear(getId(), externalComponent.name.get(), ComponentType.Component);
+    }
+
+    @Override
+    public void applyTopInset() {
+        if (view != null) presenter.applyTopInsets(view, getTopInset());
+    }
+
+    @Override
+    public int getTopInset() {
+        int statusBarInset = resolveCurrentOptions().statusBar.drawBehind.isTrue() ? 0 : StatusBarUtils.getStatusBarHeight(getActivity());
+        return statusBarInset + perform(getParentController(), 0, p -> p.getTopInset(this));
+    }
+
+    @Override
+    public void applyBottomInset() {
+        if (view != null) presenter.applyBottomInset(view, getBottomInset());
+    }
+
+    @Override
+    public String getCurrentComponentName() {
+        return externalComponent.name.get();
     }
 
     @Override
@@ -48,5 +95,10 @@ public class ExternalComponentViewController extends ViewController<ExternalComp
 
     public FragmentActivity getActivity() {
         return (FragmentActivity) super.getActivity();
+    }
+
+    private void enableDrawingBehindStatusBar(View view) {
+        view.setFitsSystemWindows(true);
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> insets);
     }
 }
