@@ -257,7 +257,7 @@ public abstract class ViewController<T extends ViewGroup> implements ViewTreeObs
         }
     }
 
-    protected void onAttachToParent() {
+    public void onAttachToParent() {
 
     }
 
