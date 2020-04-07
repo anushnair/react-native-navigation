@@ -53,8 +53,10 @@ public abstract class ViewController<T extends ViewGroup> implements ViewTreeObs
     private final Activity activity;
     private final String id;
     private YellowBoxDelegate yellowBoxDelegate;
-    @Nullable protected T view;
-    @Nullable private ParentController<T> parentController;
+    @Nullable
+    protected T view;
+    @Nullable
+    private ParentController<T> parentController;
     private boolean isShown;
     private boolean isDestroyed;
     private ViewVisibilityListener viewVisibilityListener = new ViewVisibilityListenerAdapter();
@@ -120,7 +122,7 @@ public abstract class ViewController<T extends ViewGroup> implements ViewTreeObs
     }
 
     public void setDefaultOptions(Options defaultOptions) {
-        
+
     }
 
     public Activity getActivity() {
@@ -151,7 +153,7 @@ public abstract class ViewController<T extends ViewGroup> implements ViewTreeObs
     public T getView() {
         if (view == null) {
             if (isDestroyed) {
-                throw new RuntimeException("Tried to create view after it has already been destroyed");
+                throw new RuntimeException("Tried to create view after it has already been destroyed" + this.getId());
             }
             view = createView();
             view.setOnHierarchyChangeListener(this);
@@ -197,7 +199,8 @@ public abstract class ViewController<T extends ViewGroup> implements ViewTreeObs
         applyOptions(options);
         performOnParentController(parentController -> {
             parentController.clearOptions();
-            if (getView() instanceof Component) parentController.applyChildOptions(options, (Component) getView());
+            if (getView() instanceof Component)
+                parentController.applyChildOptions(options, (Component) getView());
         });
         if (onAppearedListener != null && !appearEventPosted) {
             appearEventPosted = true;
@@ -279,16 +282,16 @@ public abstract class ViewController<T extends ViewGroup> implements ViewTreeObs
 
     public boolean isViewShown() {
         return !isDestroyed &&
-               getView().isShown() &&
-               view != null &&
-               isRendered();
+                getView().isShown() &&
+                view != null &&
+                isRendered();
     }
 
     public boolean isRendered() {
         return view != null && (
                 waitForRender.isFalseOrUndefined() ||
-                !(view instanceof Renderable) ||
-                ((Renderable) view).isRendered()
+                        !(view instanceof Renderable) ||
+                        ((Renderable) view).isRendered()
         );
     }
 
@@ -297,6 +300,6 @@ public abstract class ViewController<T extends ViewGroup> implements ViewTreeObs
     }
 
     public List<Element> getElements() {
-        return getView() instanceof IReactView && view != null? ((IReactView) view).getElements() : Collections.EMPTY_LIST;
+        return getView() instanceof IReactView && view != null ? ((IReactView) view).getElements() : Collections.EMPTY_LIST;
     }
 }
