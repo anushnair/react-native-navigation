@@ -43,6 +43,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.mockito.*;
+import org.robolectric.Robolectric;
+import org.robolectric.shadows.ShadowLooper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1042,24 +1044,39 @@ public class StackControllerTest extends BaseTest {
         verify(topBarController, times(1)).clear();
     }
 
+    @Test
+    public void onAttachToParent_doesNotCrashWhenCalledAfterDestroy() {
+        Robolectric.getForegroundThreadScheduler().pause();
+        StackController spy = spy(createStack());
+
+        StackLayout view = spy.getView();
+        spy.push(child1, new CommandListenerAdapter());
+        activity.setContentView(view);
+
+        child1.destroy();
+        ShadowLooper.idleMainLooper();
+
+        verify(spy).onAttachToParent();
+    }
+
     private void assertContainsOnlyId(String... ids) {
         assertThat(uut.size()).isEqualTo(ids.length);
         assertThat(uut.getChildControllers()).extracting((Extractor<ViewController, String>) ViewController::getId).containsOnly(ids);
     }
 
     private StackController createStack() {
-        return createStack("stack", new ArrayList<>());
+        return createStackBuilder("stack", new ArrayList<>()).build();
     }
 
     private StackController createStack(String id) {
-        return createStack(id, new ArrayList<>());
+        return createStackBuilder(id, new ArrayList<>()).build();
     }
 
     private StackController createStack(List<ViewController> children) {
-        return createStack("stack", children);
+        return createStackBuilder("stack", children).build();
     }
 
-    private StackController createStack(String id, List<ViewController> children) {
+    private StackControllerBuilder createStackBuilder(String id, List<ViewController> children) {
         createTopBarController();
         return TestUtils.newStackController(activity)
                 .setChildren(children)
@@ -1068,8 +1085,7 @@ public class StackControllerTest extends BaseTest {
                 .setChildRegistry(childRegistry)
                 .setAnimator(animator)
                 .setStackPresenter(presenter)
-                .setBackButtonHelper(backButtonHelper)
-                .build();
+                .setBackButtonHelper(backButtonHelper);
     }
 
     private void createTopBarController() {
