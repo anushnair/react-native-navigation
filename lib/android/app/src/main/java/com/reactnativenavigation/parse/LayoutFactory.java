@@ -1,6 +1,7 @@
 package com.reactnativenavigation.parse;
 
 import android.app.Activity;
+import android.util.Log;
 
 import com.facebook.react.ReactInstanceManager;
 import com.reactnativenavigation.presentation.BottomTabPresenter;
@@ -37,16 +38,17 @@ import static com.reactnativenavigation.parse.Options.parse;
 
 public class LayoutFactory {
 
-	private final Activity activity;
+    private static final String TAG = "LayoutFactory";
+    private final Activity activity;
     private final ChildControllersRegistry childRegistry;
-	private final ReactInstanceManager reactInstanceManager;
+    private final ReactInstanceManager reactInstanceManager;
     private EventEmitter eventEmitter;
     private Map<String, ExternalComponentCreator> externalComponentCreators;
     private Options defaultOptions;
     private final TypefaceLoader typefaceManager;
 
     public LayoutFactory(Activity activity, ChildControllersRegistry childRegistry, final ReactInstanceManager reactInstanceManager, EventEmitter eventEmitter, Map<String, ExternalComponentCreator> externalComponentCreators, Options defaultOptions) {
-		this.activity = activity;
+        this.activity = activity;
         this.childRegistry = childRegistry;
         this.reactInstanceManager = reactInstanceManager;
         this.eventEmitter = eventEmitter;
@@ -55,90 +57,91 @@ public class LayoutFactory {
         typefaceManager = new TypefaceLoader(activity);
     }
 
-	public ViewController create(final LayoutNode node) {
-		switch (node.type) {
-			case Component:
-				return createComponent(node);
+    public ViewController create(final LayoutNode node) {
+        Log.d(TAG, "create: Node TYPE: " + node.type + " ID: " + node.id);
+        switch (node.type) {
+            case Component:
+                return createComponent(node);
             case ExternalComponent:
                 return createExternalComponent(node);
-			case Stack:
-				return createStack(node);
-			case BottomTabs:
-				return createBottomTabs(node);
-			case SideMenuRoot:
-				return createSideMenuRoot(node);
-			case SideMenuCenter:
-				return createSideMenuContent(node);
-			case SideMenuLeft:
-				return createSideMenuLeft(node);
-			case SideMenuRight:
-				return createSideMenuRight(node);
+            case Stack:
+                return createStack(node);
+            case BottomTabs:
+                return createBottomTabs(node);
+            case SideMenuRoot:
+                return createSideMenuRoot(node);
+            case SideMenuCenter:
+                return createSideMenuContent(node);
+            case SideMenuLeft:
+                return createSideMenuLeft(node);
+            case SideMenuRight:
+                return createSideMenuRight(node);
             case TopTabs:
                 return createTopTabs(node);
-			default:
-				throw new IllegalArgumentException("Invalid node type: " + node.type);
-		}
-	}
+            default:
+                throw new IllegalArgumentException("Invalid node type: " + node.type);
+        }
+    }
 
     private ViewController createSideMenuRoot(LayoutNode node) {
-		SideMenuController sideMenuController = new SideMenuController(activity,
+        SideMenuController sideMenuController = new SideMenuController(activity,
                 childRegistry,
                 node.id,
                 parse(typefaceManager, node.getOptions()),
                 new SideMenuPresenter(),
                 new Presenter(activity, defaultOptions)
         );
-		ViewController childControllerCenter = null, childControllerLeft = null, childControllerRight = null;
+        ViewController childControllerCenter = null, childControllerLeft = null, childControllerRight = null;
 
-		for (LayoutNode child : node.children) {
-			switch (child.type) {
-				case SideMenuCenter:
-					childControllerCenter = create(child);
-					childControllerCenter.setParentController(sideMenuController);
-					break;
-				case SideMenuLeft:
-					childControllerLeft = create(child);
-					childControllerLeft.setParentController(sideMenuController);
-					break;
-				case SideMenuRight:
-					childControllerRight = create(child);
-					childControllerRight.setParentController(sideMenuController);
-					break;
-				default:
-					throw new IllegalArgumentException("Invalid node type in sideMenu: " + node.type);
-			}
-		}
+        for (LayoutNode child : node.children) {
+            switch (child.type) {
+                case SideMenuCenter:
+                    childControllerCenter = create(child);
+                    childControllerCenter.setParentController(sideMenuController);
+                    break;
+                case SideMenuLeft:
+                    childControllerLeft = create(child);
+                    childControllerLeft.setParentController(sideMenuController);
+                    break;
+                case SideMenuRight:
+                    childControllerRight = create(child);
+                    childControllerRight.setParentController(sideMenuController);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid node type in sideMenu: " + node.type);
+            }
+        }
 
-		if (childControllerCenter != null) {
-			sideMenuController.setCenterController(childControllerCenter);
-		}
+        if (childControllerCenter != null) {
+            sideMenuController.setCenterController(childControllerCenter);
+        }
 
-		if (childControllerLeft != null) {
-			sideMenuController.setLeftController(childControllerLeft);
-		}
+        if (childControllerLeft != null) {
+            sideMenuController.setLeftController(childControllerLeft);
+        }
 
-		if (childControllerRight != null) {
-			sideMenuController.setRightController(childControllerRight);
-		}
+        if (childControllerRight != null) {
+            sideMenuController.setRightController(childControllerRight);
+        }
 
-		return sideMenuController;
-	}
+        return sideMenuController;
+    }
 
-	private ViewController createSideMenuContent(LayoutNode node) {
-		return create(node.children.get(0));
-	}
+    private ViewController createSideMenuContent(LayoutNode node) {
+        return create(node.children.get(0));
+    }
 
-	private ViewController createSideMenuLeft(LayoutNode node) {
-		return create(node.children.get(0));
-	}
+    private ViewController createSideMenuLeft(LayoutNode node) {
+        return create(node.children.get(0));
+    }
 
-	private ViewController createSideMenuRight(LayoutNode node) {
-		return create(node.children.get(0));
-	}
+    private ViewController createSideMenuRight(LayoutNode node) {
+        return create(node.children.get(0));
+    }
 
-	private ViewController createComponent(LayoutNode node) {
-		String id = node.id;
-		String name = node.data.optString("name");
+    private ViewController createComponent(LayoutNode node) {
+        String id = node.id;
+        String name = node.data.optString("name");
         return new ComponentViewController(activity,
                 childRegistry,
                 id,
@@ -148,7 +151,7 @@ public class LayoutFactory {
                 new Presenter(activity, defaultOptions),
                 new ComponentPresenter(defaultOptions)
         );
-	}
+    }
 
     private ViewController createExternalComponent(LayoutNode node) {
         final ExternalComponent externalComponent = ExternalComponent.parse(node.data);
@@ -161,7 +164,7 @@ public class LayoutFactory {
         );
     }
 
-	private ViewController createStack(LayoutNode node) {
+    private ViewController createStack(LayoutNode node) {
         return new StackControllerBuilder(activity)
                 .setChildren(createChildren(node.children))
                 .setChildRegistry(childRegistry)
@@ -178,7 +181,7 @@ public class LayoutFactory {
                 ))
                 .setPresenter(new Presenter(activity, defaultOptions))
                 .build();
-	}
+    }
 
     private List<ViewController> createChildren(List<LayoutNode> children) {
         List<ViewController> result = new ArrayList<>();
@@ -203,7 +206,7 @@ public class LayoutFactory {
                 new Presenter(activity, defaultOptions),
                 new BottomTabsPresenter(tabs, defaultOptions),
                 new BottomTabPresenter(activity, tabs, new ImageLoader(), defaultOptions));
-	}
+    }
 
     private ViewController createTopTabs(LayoutNode node) {
         final List<ViewController> tabs = new ArrayList<>();
