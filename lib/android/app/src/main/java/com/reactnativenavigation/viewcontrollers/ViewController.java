@@ -153,7 +153,7 @@ public abstract class ViewController<T extends ViewGroup> implements ViewTreeObs
     public T getView() {
         if (view == null) {
             if (isDestroyed) {
-                throw new RuntimeException("Tried to create view after it has already been destroyed" + this.getId());
+                throw new RuntimeException("Tried to create view after it has already been destroyed: " + this.getId());
             }
             view = createView();
             view.setOnHierarchyChangeListener(this);
